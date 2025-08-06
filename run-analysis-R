@@ -1,0 +1,41 @@
+##Set directory
+data_dir <- "UCI HAR Dataset"
+
+##Load feature names to identify variables
+features <- read.table(file.path(data_dir, "features.txt"), col.names = c("index", "feature"))
+mean_sd_features <- grep("mean\\(\\)|std\\(\\)", features$feature)
+
+##Read and Create Training Set Dataframe
+train_set <- read.table(file.path(data_dir, "train", "X_train.txt"))
+train_label <- read.table(file.path(data_dir, "train", "y_train.txt"))
+train_subject <- read.table(file.path(data_dir, "train", "subject_train.txt"))
+train_data <- cbind(train_subject, train_label, train_set)
+names(train_data)[1:2] <- c("subject", "activity")
+
+##Create Test Set Dataframe
+test_set <- read.table(file.path(data_dir, "test", "X_test.txt"))
+test_label <- read.table(file.path(data_dir, "test", "y_test.txt"))
+test_subject <- read.table(file.path(data_dir, "test", "subject_test.txt"))
+test_data <- cbind(test_subject, test_label, test_set)
+names(test_data)[1:2] <- c("subject", "activity")
+
+##Merge Test and Training Dataframes
+merged_data <- rbind(test_data, train_data)
+
+##Assign feature names
+selected_features <- features[mean_sd_features, "feature"]
+names(merged_data)[3:ncol(merged_data)] <- selected_features
+
+head(merged_data)
+
+##Descriptive Activity Labels
+merged_data$activity[merged_data$activity == "1"] <- "WALKING"
+merged_data$activity[merged_data$activity == "2"] <- "UPSTAIRS_WALKING"
+merged_data$activity[merged_data$activity == "3"] <- "DOWNSTAIRS_WALKING"
+merged_data$activity[merged_data$activity == "4"] <- "SITTING"
+merged_data$activity[merged_data$activity == "5"] <- "STANDING"
+merged_data$activity[merged_data$activity == "6"] <- "LAYING"
+
+##Average for each variable and subject
+tidy_data <- aggregate(. ~subject + activity, data = merged_data, FUN = mean)
+tidy_data <- tidy_data[order(tidy_data$subject, tidy_data$activity), ]
